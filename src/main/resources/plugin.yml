@@ -8,3 +8,6 @@ permissions:
   viaversionstatus.notify:
     description: Display other player client version at join
     default: op
+  viaversionstatus.notify.ignoresame:
+    description: Do not display version if client version equals server version
+    default: false
