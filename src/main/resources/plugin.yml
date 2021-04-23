@@ -2,7 +2,7 @@ name: ViaVersionStatus
 main: com.bobcat00.viaversionstatus.ViaVersionStatus
 version: ${project.version}
 author: Bobcat00
-softdepend: [ViaVersion, ProtocolSupport, ViaBackwards, ViaRewind, Prism]
+softdepend: [ViaVersion, ProtocolSupport, ViaBackwards, ViaRewind, Geyser-Spigot, floodgate-bukkit, Prism]
 permissions:
   viaversionstatus.exempt.*:
     description: Exempts this player from processing at join

@@ -33,6 +33,11 @@ import com.bobcat00.viaversionstatus.connections.ProtocolVersion;
 import com.bobcat00.viaversionstatus.connections.PSConnection;
 import com.bobcat00.viaversionstatus.connections.ViaConnection;
 
+import org.geysermc.connector.GeyserConnector;
+import org.geysermc.connector.network.session.GeyserSession;
+import org.geysermc.floodgate.FloodgateAPI;
+import org.geysermc.floodgate.FloodgatePlayer;
+
 public final class Listeners implements Listener
 {
     private ViaVersionStatus plugin;
@@ -219,18 +224,52 @@ public final class Listeners implements Listener
             // Should never get here
             return;
         }
-        
-        final String clientVersion = clientProtocol.getName();
+
+        final String javaClientVersion = clientProtocol.getName();
         final String serverVersion = serverProtocol.getName();
-        
+
+        // The usage of the Floodgate API here covers servers that are running Geyser as a standalone service (often on another machine), but with the Floodgate plugin enabled.
+        // TODO: Add support for the upcoming Floodgate 2.0, which made significant changes to the API (including renaming the entire API class to FloodgateApi).
+        final boolean isGeyserEnabled = plugin.getServer().getPluginManager().getPlugin("Geyser-Spigot") != null;
+        final boolean isFloodgateEnabled = plugin.getServer().getPluginManager().getPlugin("floodgate-bukkit") != null;
+        final boolean isPlayerUsingBedrock;
+
+        if (isGeyserEnabled) {
+            isPlayerUsingBedrock = GeyserConnector.getInstance().getPlayerByUuid(player.getUniqueId()) != null;
+        } else if (isFloodgateEnabled) {
+            // TODO: Floodgate 2.0's API uses the method isFloodgatePlayer(player.getUniqueId()) instead.
+            isPlayerUsingBedrock = FloodgateAPI.isBedrockPlayer(player);
+        } else {
+            isPlayerUsingBedrock = false;
+        }
+
+        String bedrockClientVersion = null;
+        String bedrockClientOperatingSystem = null;
+
+        if (isPlayerUsingBedrock && isGeyserEnabled) {
+            GeyserSession geyserSession = GeyserConnector.getInstance().getPlayerByUuid(player.getUniqueId());
+            bedrockClientVersion = geyserSession.getClientData().getGameVersion();
+            bedrockClientOperatingSystem = geyserSession.getClientData().getDeviceOS().toString();
+        } else if (isPlayerUsingBedrock && isFloodgateEnabled) {
+            FloodgatePlayer floodgatePlayer = FloodgateAPI.getPlayer(player);
+            bedrockClientVersion = floodgatePlayer.getVersion();
+            bedrockClientOperatingSystem = floodgatePlayer.getDeviceOS().toString();
+        }
+
+        final String bedrockClientInfoString = bedrockClientVersion + " (Bedrock [" + bedrockClientOperatingSystem + "], equivalent to Java " + javaClientVersion + ")";
+        final String displayedClientVersionString = (isPlayerUsingBedrock) ? bedrockClientInfoString : ((isGeyserEnabled || isFloodgateEnabled) ? javaClientVersion + " (Java)" : javaClientVersion);
+
         // 1. Write to log file
         
         if (!player.hasPermission("viaversionstatus.exempt.log"))
         {
-            plugin.getLogger().info(player.getName() + " is using version " + clientProtocol.toString() + ".");
+            plugin.getLogger().info(player.getName() + " is using Minecraft Java network protocol version " + clientProtocol.toString() + ".");
+            if (isPlayerUsingBedrock) {
+                plugin.getLogger().info(player.getName() + " is connecting from a Bedrock client, version " + bedrockClientInfoString + ".");
+            }
         }
         
-        // 2. Notify ops
+        // 2. Notify any player with the `viaversionstatus.notify` permission (ops by default)
         
         if (!player.hasPermission("viaversionstatus.exempt.notify"))
         {
@@ -240,7 +279,7 @@ public final class Listeners implements Listener
                         p.sendMessage(ChatColor.translateAlternateColorCodes('&',
                                 plugin.config.getNotifyString().replace("%player%", player.getName()).
                                                                 replace("%displayname%", player.getDisplayName()).
-                                                                replace("%version%", clientVersion).
+                                                                replace("%version%", displayedClientVersionString).
                                                                 replace("%server%", serverVersion)));
                     }
                 }
@@ -251,7 +290,7 @@ public final class Listeners implements Listener
                 if (!notifyCommand.isEmpty()) {
                     notifyCommand = notifyCommand.replace("%player%", player.getName()).
                                                   replace("%displayname%", player.getDisplayName()).
-                                                  replace("%version%", clientVersion).
+                                                  replace("%version%", displayedClientVersionString).
                                                   replace("%server%", serverVersion);
                     plugin.getLogger().info("Executing command " + notifyCommand);
                     try {
@@ -279,7 +318,7 @@ public final class Listeners implements Listener
                             player.sendMessage(ChatColor.translateAlternateColorCodes('&',
                                     plugin.config.getOlderVersionWarnString().replace("%player%", player.getName()).
                                                                               replace("%displayname%", player.getDisplayName()).
-                                                                              replace("%version%", clientVersion).
+                                                                              replace("%version%", displayedClientVersionString).
                                                                               replace("%server%", serverVersion)));
                         }
                     }
@@ -291,7 +330,7 @@ public final class Listeners implements Listener
                 if (!warnCommand.isEmpty()) {
                     warnCommand = warnCommand.replace("%player%", player.getName()).
                                               replace("%displayname%", player.getDisplayName()).
-                                              replace("%version%", clientVersion).
+                                              replace("%version%", (isPlayerUsingBedrock) ? bedrockClientInfoString : javaClientVersion).
                                               replace("%server%", serverVersion);
                     plugin.getLogger().info("Executing command " + warnCommand);
                     try {
@@ -319,7 +358,7 @@ public final class Listeners implements Listener
                             player.sendMessage(ChatColor.translateAlternateColorCodes('&',
                                     plugin.config.getNewerVersionWarnString().replace("%player%", player.getName()).
                                                                               replace("%displayname%", player.getDisplayName()).
-                                                                              replace("%version%", clientVersion).
+                                                                              replace("%version%", displayedClientVersionString).
                                                                               replace("%server%", serverVersion)));
                         }
                     }
@@ -331,7 +370,7 @@ public final class Listeners implements Listener
                 if (!newerVersionWarnCommand.isEmpty()) {
                     newerVersionWarnCommand = newerVersionWarnCommand.replace("%player%", player.getName()).
                                                                       replace("%displayname%", player.getDisplayName()).
-                                                                      replace("%version%", clientVersion).
+                                                                      replace("%version%", displayedClientVersionString).
                                                                       replace("%server%", serverVersion);
                     plugin.getLogger().info("Executing command " + newerVersionWarnCommand);
                     try {
