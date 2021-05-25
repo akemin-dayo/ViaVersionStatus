@@ -234,14 +234,14 @@ public final class Listeners implements Listener
         final boolean isFloodgateEnabled = plugin.getServer().getPluginManager().getPlugin("floodgate-bukkit") != null;
         final boolean isPlayerUsingBedrock;
 
-        if (isGeyserEnabled)
-        {
-            isPlayerUsingBedrock = GeyserConnector.getInstance().getPlayerByUuid(player.getUniqueId()) != null;
-        }
-        else if (isFloodgateEnabled)
+        if (isFloodgateEnabled)
         {
             // TODO: Floodgate 2.0's API uses the method isFloodgatePlayer(player.getUniqueId()) instead.
             isPlayerUsingBedrock = FloodgateAPI.isBedrockPlayer(player);
+        }
+        else if (isGeyserEnabled)
+        {
+            isPlayerUsingBedrock = GeyserConnector.getInstance().getPlayerByUuid(player.getUniqueId()) != null;
         }
         else
         {
@@ -251,17 +251,17 @@ public final class Listeners implements Listener
         String bedrockClientVersion = null;
         String bedrockClientOperatingSystem = null;
 
-        if (isPlayerUsingBedrock && isGeyserEnabled)
-        {
-            GeyserSession geyserSession = GeyserConnector.getInstance().getPlayerByUuid(player.getUniqueId());
-            bedrockClientVersion = geyserSession.getClientData().getGameVersion();
-            bedrockClientOperatingSystem = geyserSession.getClientData().getDeviceOS().toString();
-        }
-        else if (isPlayerUsingBedrock && isFloodgateEnabled)
+        if (isPlayerUsingBedrock && isFloodgateEnabled)
         {
             FloodgatePlayer floodgatePlayer = FloodgateAPI.getPlayer(player);
             bedrockClientVersion = floodgatePlayer.getVersion();
             bedrockClientOperatingSystem = floodgatePlayer.getDeviceOS().toString();
+        }
+        else if (isPlayerUsingBedrock && isGeyserEnabled)
+        {
+            GeyserSession geyserSession = GeyserConnector.getInstance().getPlayerByUuid(player.getUniqueId());
+            bedrockClientVersion = geyserSession.getClientData().getGameVersion();
+            bedrockClientOperatingSystem = geyserSession.getClientData().getDeviceOS().toString();
         }
 
         final String bedrockClientInfoString = bedrockClientVersion + " (Bedrock [" + bedrockClientOperatingSystem + "], equivalent to Java " + javaClientVersion + ")";
