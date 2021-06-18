@@ -35,8 +35,8 @@ import com.bobcat00.viaversionstatus.connections.ViaConnection;
 
 import org.geysermc.connector.GeyserConnector;
 import org.geysermc.connector.network.session.GeyserSession;
-import org.geysermc.floodgate.FloodgateAPI;
-import org.geysermc.floodgate.FloodgatePlayer;
+import org.geysermc.floodgate.api.FloodgateApi;
+import org.geysermc.floodgate.api.player.FloodgatePlayer;
 
 public final class Listeners implements Listener
 {
@@ -229,15 +229,13 @@ public final class Listeners implements Listener
         final String serverVersion = serverProtocol.getName();
 
         // The usage of the Floodgate API here covers servers that are running Geyser as a standalone service (often on another machine), but with the Floodgate plugin enabled.
-        // TODO: Add support for the upcoming Floodgate 2.0, which made significant changes to the API (including renaming the entire API class to FloodgateApi).
         final boolean isGeyserEnabled = plugin.getServer().getPluginManager().getPlugin("Geyser-Spigot") != null;
-        final boolean isFloodgateEnabled = plugin.getServer().getPluginManager().getPlugin("floodgate-bukkit") != null;
+        final boolean isFloodgateEnabled = plugin.getServer().getPluginManager().getPlugin("floodgate") != null;
         final boolean isPlayerUsingBedrock;
 
         if (isFloodgateEnabled)
         {
-            // TODO: Floodgate 2.0's API uses the method isFloodgatePlayer(player.getUniqueId()) instead.
-            isPlayerUsingBedrock = FloodgateAPI.isBedrockPlayer(player);
+            isPlayerUsingBedrock = FloodgateApi.getInstance().isFloodgatePlayer(player.getUniqueId());
         }
         else if (isGeyserEnabled)
         {
@@ -253,15 +251,15 @@ public final class Listeners implements Listener
 
         if (isPlayerUsingBedrock && isFloodgateEnabled)
         {
-            FloodgatePlayer floodgatePlayer = FloodgateAPI.getPlayer(player);
+            FloodgatePlayer floodgatePlayer = FloodgateApi.getInstance().getPlayer(player.getUniqueId());
             bedrockClientVersion = floodgatePlayer.getVersion();
-            bedrockClientOperatingSystem = floodgatePlayer.getDeviceOS().toString();
+            bedrockClientOperatingSystem = floodgatePlayer.getDeviceOs().toString();
         }
         else if (isPlayerUsingBedrock && isGeyserEnabled)
         {
             GeyserSession geyserSession = GeyserConnector.getInstance().getPlayerByUuid(player.getUniqueId());
             bedrockClientVersion = geyserSession.getClientData().getGameVersion();
-            bedrockClientOperatingSystem = geyserSession.getClientData().getDeviceOS().toString();
+            bedrockClientOperatingSystem = geyserSession.getClientData().getDeviceOs().toString();
         }
 
         final String bedrockClientInfoString = bedrockClientVersion + " (Bedrock [" + bedrockClientOperatingSystem + "], equivalent to Java " + javaClientVersion + ")";
