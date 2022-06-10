@@ -35,6 +35,11 @@ public class Config
     
     // Get the string to be sent to ops
     
+    public boolean getNotifyOps()
+    {
+        return plugin.getConfig().getBoolean("notify-ops");
+    }
+    
     public String getNotifyString()
     {
         return plugin.getConfig().getString("notify-string");
@@ -91,6 +96,20 @@ public class Config
         return plugin.getConfig().getBoolean("list-supported-protocols");
     }
     
+    // Block no light data warnings
+    
+    public boolean getBlockNoLightDataWarnings()
+    {
+        return plugin.getConfig().getBoolean("block-no-light-data-warnings");
+    }
+    
+    // Metrics
+    
+    public boolean getEnableMetrics()
+    {
+        return plugin.getConfig().getBoolean("enable-metrics");
+    }
+    
     // Prism integration
     
     public boolean getPrismIntegration()
@@ -110,6 +129,11 @@ public class Config
     
     public void updateConfig()
     {
+        if (!contains("notify-ops", true))
+        {
+            plugin.getConfig().set("notify-ops", true);
+        }
+        
         if (!contains("notify-command", true))
         {
             plugin.getConfig().set("notify-command", "");
@@ -122,22 +146,32 @@ public class Config
 
         if (!contains("warn-players-newer", true))
         {
-            plugin.getConfig().set("warn-players-newer", true);
+            plugin.getConfig().set("warn-players-newer", plugin.getConfig().getBoolean("warn-players"));
         }
 
         if (!contains("warn-string-newer", true))
         {
-            plugin.getConfig().set("warn-string-newer", "&cNOTICE: You are running Minecraft version &e%version%\n&cThe recommended version for this server is &a%server%");
+            plugin.getConfig().set("warn-string-newer", plugin.getConfig().getString("warn-string"));
         }
 
         if (!contains("warn-command-newer", true))
         {
-            plugin.getConfig().set("warn-command-newer", "");
+            plugin.getConfig().set("warn-command-newer", plugin.getConfig().getString("warn-command"));
         }
         
         if (!contains("list-supported-protocols", true))
         {
             plugin.getConfig().set("list-supported-protocols", true);
+        }
+        
+        if (!contains("block-no-light-data-warnings", true))
+        {
+            plugin.getConfig().set("block-no-light-data-warnings", false);
+        }
+        
+        if (!contains("enable-metrics", true))
+        {
+            plugin.getConfig().set("enable-metrics", true);
         }
         
         if (!contains("prism-integration", true))
@@ -167,7 +201,8 @@ public class Config
             writer.write("# \\n can be used as a line break" + "\n");
             writer.write("\n");
             
-            writer.write("# The string to send to ops when a player joins" + "\n");
+            writer.write("# Notify ops when a player joins" + "\n");
+            writer.write("notify-ops: " + plugin.getConfig().getBoolean("notify-ops") + "\n");
             writer.write("notify-string: \"" + plugin.getConfig().getString("notify-string").replaceAll("\n", "\\\\n") + "\"" + "\n");
             writer.write("notify-command: \"" + plugin.getConfig().getString("notify-command") + "\"" + "\n");
             writer.write("\n");
@@ -191,6 +226,14 @@ public class Config
             
             writer.write("# At startup, list the protocols supported by ViaVersion" + "\n");
             writer.write("list-supported-protocols: " + plugin.getConfig().getBoolean("list-supported-protocols") + "\n");
+            writer.write("\n");
+            
+            writer.write("# Block \"No light data found for chunk\" warning messages" + "\n");
+            writer.write("block-no-light-data-warnings: " + plugin.getConfig().getBoolean("block-no-light-data-warnings") + "\n");
+            writer.write("\n");
+            
+            writer.write("# Enable metrics (subject to bStats global config)" + "\n");
+            writer.write("enable-metrics: " + plugin.getConfig().getBoolean("enable-metrics") + "\n");
             writer.write("\n");
             
             writer.write("# Record data via Prism, with the action vvs-client-connect" + "\n");
